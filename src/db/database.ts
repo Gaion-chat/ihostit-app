@@ -1,7 +1,8 @@
 import Database from 'better-sqlite3';
-import { readFileSync } from 'fs';
-import { join } from 'path';
-import * as DbTypes from './types';
+import { readFileSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import * as DbTypes from './types.js';
 
 type Category = DbTypes.Category;
 type App = DbTypes.App;
@@ -33,7 +34,8 @@ class DatabaseService {
   private initializeDatabase(): void {
     try {
       // Read and execute schema
-      const schemaPath = join(__dirname, 'schema.sql');
+      const __dirnameESM = dirname(fileURLToPath(import.meta.url));
+      const schemaPath = join(__dirnameESM, 'schema.sql');
       const schema = readFileSync(schemaPath, 'utf-8');
       this.db.exec(schema);
       console.log('Database initialized successfully');

@@ -1,29 +1,49 @@
 # ihostit.app
 
-Discover and explore self-hosted software curated from the awesome-selfhosted list. This app fetches, parses, and presents categorized apps with links to source, websites, and live demos.
+Discover and explore self-hosted software curated from the awesome-selfhosted list. The backend syncs and stores data in SQLite; the React frontend consumes a simple HTTP API.
 
-Notes:
-- Runs entirely in the browser (no backend). Data is cached locally (localStorage) after parsing the upstream README.
-- Includes a lightweight in-browser database layer that mirrors a SQLite-style API for future migration.
-- A background scheduler uses `setInterval` in the browser to periodically refresh data.
+Highlights:
+- Server-side SQLite (better-sqlite3): fast, reliable, single-file DB.
+- Scheduled sync on the server via cron to keep data fresh.
+- Client fetches pre-parsed categories and apps from `/api` endpoints.
 
-## Quick Start
+## Quick Start (Dev)
 
 - Requirements: Node.js 18+
 
 Commands:
 - `npm install`
-- `npm run dev` — start Vite dev server
-- `npm run build` — production build
+- `npm run build:server` — compile the Node API
+- `npm run start:server` — start the Node API (defaults to http://localhost:8787)
+- `npm run dev` — start Vite dev server (proxies `/api` to 8787)
+- `npm run build` — production build of the client
 - `npm run preview` — preview built assets
 
 ## Data Flow
 
-- `src/services/github.ts` fetches the awesome-selfhosted README and parses categories and apps.
-- `src/db/browserDatabase.ts` persists categories/apps/sync metadata in localStorage.
-- `src/services/syncService.ts` orchestrates syncing parsed data into the local DB.
-- `src/services/scheduler.ts` periodically checks if a refresh is due and triggers a sync.
-- `src/hooks/useAwesomeSelfHosted.ts` reads from the DB and exposes UI-friendly structures.
+- Server:
+  - `server/index.ts` exposes `/api` routes.
+  - `server/sync.ts` runs the sync, writing to SQLite via `src/db/database.ts`.
+  - `src/db/database.ts` is the Node-only DB service (better-sqlite3).
+  - A cron job runs daily at 02:00 UTC to refresh data.
+- Client:
+  - `src/services/github.ts` contains the parser used by the server.
+  - `src/hooks/useAwesomeSelfHosted.ts` fetches `{ categories, apps }` from `/api/data`.
+  - UI components render cards and links.
+
+Note: A browser-only localStorage DB was replaced in favor of server-side SQLite.
+
+## Deploying on Ubuntu (outline)
+
+1) Install Node.js 18+ and build:
+- `npm ci`
+- `npm run build` and `npm run build:server`
+
+2) Run the API (behind a process manager like systemd/PM2):
+- `node server-dist/server/index.js`
+
+3) Serve the client (static hosting or reverse proxy):
+- `npm run preview` or host `dist/` via Nginx/Apache and proxy `/api` to the API port.
 
 ## Development Notes
 

@@ -146,6 +146,7 @@ export class GitHubService {
 
   private getCachedData(): ParsedCategory[] | null {
     try {
+      if (typeof localStorage === 'undefined') return null;
       const cached = localStorage.getItem(this.CACHE_KEY);
       if (!cached) return null;
 
@@ -158,17 +159,18 @@ export class GitHubService {
       }
 
       // Cache expired, remove it
-      localStorage.removeItem(this.CACHE_KEY);
+      if (typeof localStorage !== 'undefined') localStorage.removeItem(this.CACHE_KEY);
       return null;
     } catch (error) {
       console.error('Error reading cache:', error);
-      localStorage.removeItem(this.CACHE_KEY);
+      if (typeof localStorage !== 'undefined') localStorage.removeItem(this.CACHE_KEY);
       return null;
     }
   }
 
   private setCachedData(data: ParsedCategory[]): void {
     try {
+      if (typeof localStorage === 'undefined') return;
       const cacheData = {
         data,
         timestamp: Date.now()
