@@ -33,17 +33,110 @@ Commands:
 
 Note: A browser-only localStorage DB was replaced in favor of server-side SQLite.
 
-## Deploying on Ubuntu (outline)
+## Production Deployment (Nginx + systemd + TLS)
 
-1) Install Node.js 18+ and build:
+These are the exact steps used to deploy ihostit.app on Ubuntu with Nginx, a systemd service for the API, and Let’s Encrypt TLS.
+
+Requirements:
+- Ubuntu with `nginx` and `certbot` installed
+- Node.js 18+ and npm
+
+1) Clone and build
+- `cd /var/www`
+- `git clone https://github.com/Gaion-chat/ihostit-app.git`
+- `cd ihostit-app`
 - `npm ci`
-- `npm run build` and `npm run build:server`
+- `npm run build:server` (compiles API to `server-dist/`)
+- `npm run build` (builds client to `dist/`)
 
-2) Run the API (behind a process manager like systemd/PM2):
-- `node server-dist/server/index.js`
+Note: `package.json` includes `postbuild:server` to copy `src/db/schema.sql` into `server-dist` ensuring the API can initialize the SQLite schema.
 
-3) Serve the client (static hosting or reverse proxy):
-- `npm run preview` or host `dist/` via Nginx/Apache and proxy `/api` to the API port.
+2) Create systemd service for the API
+Create `/etc/systemd/system/ihostit-api.service`:
+
+```
+[Unit]
+Description=ihostit.app API service
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/ihostit-app
+Environment=NODE_ENV=production
+Environment=PORT=8787
+ExecStart=/usr/bin/node /var/www/ihostit-app/server-dist/server/index.js
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Then:
+- `sudo chown -R www-data:www-data /var/www/ihostit-app`
+- `sudo systemctl daemon-reload`
+- `sudo systemctl enable --now ihostit-api.service`
+- Verify: `curl http://127.0.0.1:8787/api/status`
+
+3) Nginx configuration (serve client and proxy API)
+Create `/etc/nginx/sites-available/ihostit.app`:
+
+```
+server {
+    listen 80;
+    listen [::]:80;
+    server_name ihostit.app;
+
+    root /var/www/ihostit-app/dist;
+    index index.html;
+
+    location /assets/ {
+        try_files $uri =404;
+        access_log off;
+        expires 30d;
+        add_header Cache-Control "public";
+    }
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:8787;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_read_timeout 60s;
+    }
+
+    location / {
+        try_files $uri /index.html;
+    }
+}
+```
+
+Enable and reload:
+- `sudo ln -s /etc/nginx/sites-available/ihostit.app /etc/nginx/sites-enabled/ihostit.app`
+- `sudo nginx -t && sudo systemctl reload nginx`
+
+4) HTTPS with Let’s Encrypt
+- `sudo certbot --nginx -d ihostit.app --agree-tos --register-unsafely-without-email --redirect`
+- Optional: include `-d www.ihostit.app` if you add the www host in DNS and Nginx.
+
+5) Initialize data (one-time)
+- `curl -X POST http://127.0.0.1:8787/api/sync`
+
+6) Operations
+- Health: `curl https://ihostit.app/api/status`
+- Logs: `sudo journalctl -u ihostit-api.service -f`
+- Manual sync: `curl -X POST http://127.0.0.1:8787/api/sync`
+
+7) Updating deployment
+- `cd /var/www/ihostit-app && git pull`
+- `npm ci`
+- `npm run build:server && npm run build`
+- `sudo systemctl restart ihostit-api.service && sudo systemctl reload nginx`
 
 ## Development Notes
 

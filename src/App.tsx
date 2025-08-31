@@ -3,7 +3,7 @@ import { useAwesomeSelfHosted } from '@/hooks/useAwesomeSelfHosted';
 import { AppCard } from '@/components/AppCard';
 import { CategoryCard } from '@/components/CategoryCard';
 import { SearchAndFilter } from '@/components/SearchAndFilter';
-import { Server, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Server, AlertCircle, ArrowLeft, Github } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import initService from '@/services/initService';
 
@@ -37,6 +37,8 @@ function App() {
     
     initializeApp();
   }, []);
+
+  // no-op
   
   const {
     categories,
@@ -249,20 +251,43 @@ function App() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-border/50 mt-16">
-        <div className="container mx-auto px-4 py-6">
+      <footer className="border-t border-border/50 mt-12">
+        <div className="container mx-auto px-4 py-4">
           <div className="text-center text-sm text-muted-foreground">
-            <p>
-              Data sourced from{' '}
+            <p className="flex items-center justify-center gap-2 flex-wrap">
+              <span>
+                Data sourced from{' '}
+                <a
+                  href="https://github.com/awesome-selfhosted/awesome-selfhosted"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  awesome-selfhosted
+                </a>
+              </span>
+              <span>•</span>
+              {/* Buy Me a Beer button (no external script to avoid blockers) */}
               <a
-                href="https://github.com/awesome-selfhosted/awesome-selfhosted"
+                href="https://www.buymeacoffee.com/cyph3rasi"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary hover:underline"
+                className="inline-flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium"
+                style={{ backgroundColor: '#BD5FFF', color: '#ffffff' }}
               >
-                awesome-selfhosted
+                <span role="img" aria-label="beer">🍺</span>
+                Buy me a beer
               </a>
-              {' '}• Built with React & shadcn/ui
+              <span>•</span>
+              <a
+                href="https://github.com/Gaion-chat/ihostit-app"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="ihostit.app GitHub repository"
+                className="text-primary hover:text-primary/80"
+              >
+                <Github className="h-4 w-4 inline-block align-text-bottom" />
+              </a>
             </p>
           </div>
         </div>

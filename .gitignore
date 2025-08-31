@@ -30,3 +30,5 @@ Thumbs.db
 *.sqlite
 *.sqlite3
 
+# Build artifact copied postbuild (do not commit)
+server-dist/src/db/schema.sql
