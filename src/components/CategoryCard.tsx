@@ -136,9 +136,6 @@ export function CategoryCard({ category, onClick }: CategoryCardProps) {
           <Badge variant="secondary" className="text-xs">
             {category.apps.length} {category.apps.length === 1 ? 'app' : 'apps'}
           </Badge>
-          <span className="text-xs text-muted-foreground">
-            Click to explore
-          </span>
         </div>
       </CardContent>
     </Card>
